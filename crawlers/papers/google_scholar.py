@@ -3,7 +3,7 @@
 import asyncio
 from typing import Any
 
-import scholarly
+from scholarly import _scholarly as scholarly
 
 from base import Article, BaseCrawler, SourceType
 
@@ -14,6 +14,7 @@ class GoogleScholarCrawler(BaseCrawler):
     def __init__(self):
         super().__init__("Google Scholar", SourceType.PAPER)
         self._setup_proxy()
+        self._scholarly = scholarly._Scholarly()
 
     def _setup_proxy(self) -> None:
         """Setup proxy for Google Scholar requests."""
@@ -41,7 +42,7 @@ class GoogleScholarCrawler(BaseCrawler):
         """
         articles = []
         try:
-            search_results = scholarly.search_papers(query, max_results)
+            search_results = self._scholarly.search_pubs(query, patents=False, citations=False)
 
             for i, result in enumerate(search_results):
                 if i >= max_results:

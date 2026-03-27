@@ -12,13 +12,14 @@ from config import config
 class GraphicDesignUSACrawler(BaseCrawler):
     """Crawler for Graphic Design USA news articles."""
 
-    BASE_URL = "https://www.gdusa.com"
+    BASE_URL = "https://gdusa.com"
 
     def __init__(self):
         super().__init__(source_name="Graphic Design USA", source_type=SourceType.NEWS)
         self.client = httpx.AsyncClient(
             timeout=config.timeout_seconds,
-            headers={"User-Agent": config.user_agent}
+            headers={"User-Agent": config.user_agent},
+            follow_redirects=True
         )
 
     async def fetch_articles(self, **kwargs) -> list[Article]:

@@ -12,13 +12,14 @@ from config import config
 class SlantedCrawler(BaseCrawler):
     """Crawler for Slanted news articles."""
 
-    BASE_URL = "https://slanted.de"
+    BASE_URL = "https://www.slanted.de"
 
     def __init__(self):
         super().__init__(source_name="Slanted", source_type=SourceType.NEWS)
         self.client = httpx.AsyncClient(
             timeout=config.timeout_seconds,
-            headers={"User-Agent": config.user_agent}
+            headers={"User-Agent": config.user_agent},
+            follow_redirects=True
         )
 
     async def fetch_articles(self, **kwargs) -> list[Article]:

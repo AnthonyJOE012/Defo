@@ -18,7 +18,8 @@ class DailyDesignNewsCrawler(BaseCrawler):
         super().__init__(source_name="Daily Design News", source_type=SourceType.NEWS)
         self.client = httpx.AsyncClient(
             timeout=config.timeout_seconds,
-            headers={"User-Agent": config.user_agent}
+            headers={"User-Agent": config.user_agent},
+            follow_redirects=True
         )
 
     async def fetch_articles(self, **kwargs) -> list[Article]:
