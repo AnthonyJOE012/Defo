@@ -30,9 +30,14 @@ export interface Article {
   id: string;
   title: string;
   description: string;
+  content?: string; // Full article body text
   category: "Design News" | "Paper" | "Design Award";
   date: string; // YYYY-MM-DD
   imageUrl: string;
+  url?: string;
+  authors?: string[];
+  tags?: string[];
+  source?: string;
 }
 
 /**
@@ -154,13 +159,24 @@ export function transformArticle(dbArticle: DbArticle): Article {
   // Determine description
   let description = dbArticle.description || dbArticle.summary || "";
 
+  // Handle authors
+  let authors = dbArticle.authors;
+  if (!authors && dbArticle.author) {
+    authors = dbArticle.author.split(",").map((a) => a.trim());
+  }
+
   return {
     id: dbArticle.id,
     title: dbArticle.title,
     description,
+    content: dbArticle.content,
     category,
     date,
     imageUrl,
+    url: dbArticle.url,
+    authors,
+    tags: dbArticle.tags,
+    source: typeof dbArticle.source === 'object' ? (dbArticle.source as Source)?.name : dbArticle.source,
   };
 }
 

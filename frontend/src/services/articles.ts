@@ -143,3 +143,23 @@ export async function getDatesWithArticles(
 
   return (data || []) as string[];
 }
+
+/**
+ * Fetch a single article by ID
+ */
+export async function fetchArticleById(id: string): Promise<Article | null> {
+  const { data, error } = await supabase
+    .from('articles')
+    .select('*, source:source_id(id, name, slug, logo_url, type)')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    console.error('Failed to fetch article:', error);
+    return null;
+  }
+
+  if (!data) return null;
+
+  return transformArticle(data);
+}

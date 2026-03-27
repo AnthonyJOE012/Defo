@@ -1,11 +1,11 @@
 import { useParams, useNavigate } from "react-router";
 import { ArrowLeft, Bookmark, BookmarkCheck } from "lucide-react";
 import { useState, useEffect } from "react";
-import { mockArticles } from "../data/mockArticles";
 import { ImageWithFallback } from "../components/figma/ImageWithFallback";
 import { useCollections } from "../contexts/CollectionContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import { toast } from "sonner";
+import { useArticle } from "../../hooks/useArticle";
 
 export default function ArticleDetail() {
   const { id } = useParams<{ id: string }>();
@@ -16,7 +16,7 @@ export default function ArticleDetail() {
   const [isFavorited, setIsFavorited] = useState(false);
   const [articleCollections, setArticleCollections] = useState<string[]>([]);
 
-  const article = mockArticles.find((a) => a.id === id);
+  const { article, isLoading } = useArticle(id!);
 
   useEffect(() => {
     const checkFavorite = async () => {
@@ -29,18 +29,30 @@ export default function ArticleDetail() {
     checkFavorite();
   }, [article?.id, getArticleCollections]);
 
+  if (isLoading) {
+    return (
+      <div className="bg-white h-screen w-full flex flex-col">
+        <div className="flex-1 flex flex-col items-center justify-center p-6">
+          <p className="font-['Helvetica:Regular',sans-serif] text-[20px] text-black mb-6">
+            {t("Loading...", "加载中...")}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!article) {
     return (
       <div className="bg-white h-screen w-full flex flex-col">
         <div className="flex-1 flex flex-col items-center justify-center p-6">
           <p className="font-['Helvetica:Regular',sans-serif] text-[20px] text-black mb-6">
-            Article not found
+            {t("Article not found", "文章未找到")}
           </p>
           <button
             onClick={() => navigate("/")}
             className="px-6 py-3 bg-black text-white rounded-lg font-['Helvetica:Regular',sans-serif]"
           >
-            Go Back
+            {t("Go Back", "返回")}
           </button>
         </div>
       </div>
@@ -182,22 +194,17 @@ export default function ArticleDetail() {
           {article.title}
         </h2>
 
-        {/* Description */}
+        {/* Description / Content */}
         <div className="font-['Helvetica:Regular',sans-serif] text-[16px] text-black leading-[24px] mb-6">
-          <p className="mb-4">{article.description}</p>
-          <p className="mb-4">
-            This article provides comprehensive insights into the topic, exploring various aspects and perspectives.
-            The content has been carefully curated to offer valuable information for design professionals and enthusiasts.
-          </p>
-          <p className="mb-4">
-            In the ever-evolving landscape of design, staying informed about the latest trends, research, and awards
-            is crucial for maintaining a competitive edge. This platform aggregates the most relevant design information
-            from multiple sources, ensuring you never miss important updates.
-          </p>
-          <p>
-            Whether you're looking for inspiration, conducting research, or simply staying current with industry news,
-            our daily updates provide the comprehensive coverage you need to excel in your design practice.
-          </p>
+          {article.content ? (
+            // Display full article content
+            article.content.split('\n').map((paragraph, idx) => (
+              paragraph.trim() && <p key={idx} className="mb-4">{paragraph}</p>
+            ))
+          ) : (
+            // Fallback to description if no content
+            <p className="mb-4">{article.description}</p>
+          )}
         </div>
 
         {/* Tags */}
