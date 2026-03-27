@@ -1,13 +1,13 @@
 """Designboom news crawler."""
 
 import asyncio
+import re
 
 import httpx
 from bs4 import BeautifulSoup
 
 from base import Article, BaseCrawler, SourceType
 from config import config
-from parser import ContentParser
 
 
 class DesignboomCrawler(BaseCrawler):
@@ -19,30 +19,54 @@ class DesignboomCrawler(BaseCrawler):
         super().__init__(source_name="Designboom", source_type=SourceType.NEWS)
         self.client = httpx.AsyncClient(
             timeout=config.timeout_seconds,
-            headers={"User-Agent": config.user_agent}
+            headers={"User-Agent": config.user_agent},
+            follow_redirects=True  # Follow redirects
         )
 
     async def fetch_articles(self, **kwargs) -> list[Article]:
         """Fetch latest articles from Designboom."""
         articles = []
-        url = kwargs.get("url", f"{self.BASE_URL}/")
 
         try:
-            response = await self.client.get(url)
+            response = await self.client.get(self.BASE_URL)
             response.raise_for_status()
             soup = BeautifulSoup(response.text, "lxml")
 
-            article_links = soup.select("div.post_list_holder article a")
+            # Find article links - look for h3 tags with article titles
+            h3_tags = soup.select("article h3 a")
 
-            for link in article_links[:10]:
-                article_url = link.get("href")
-                if article_url and not article_url.startswith("http"):
-                    article_url = f"{self.BASE_URL}{article_url}"
+            seen_urls = set()
+            for h3 in h3_tags[:15]:  # Limit to 15 articles
+                url = h3.get("href", "")
+                title = h3.get_text(strip=True)
 
-                await asyncio.sleep(1.0)
-                article = await self.parse_article(article_url)
+                # Skip category/tag links (but allow article URLs ending with /)
+                if not url or "/tag/" in url or "/category/" in url:
+                    continue
+
+                # Skip if already processed
+                if url in seen_urls:
+                    continue
+                seen_urls.add(url)
+
+                # Ensure full URL with https
+                if url.startswith("//"):
+                    url = "https:" + url
+                elif url.startswith("/"):
+                    url = f"{self.BASE_URL}{url}"
+                elif not url.startswith("http"):
+                    url = f"{self.BASE_URL}/{url}"
+
+                # Ensure trailing slash for consistency
+                if not url.endswith("/"):
+                    url = url + "/"
+
+                # Parse individual article for description and date
+                article = await self.parse_article(url, title)
                 if article:
                     articles.append(article)
+
+                await asyncio.sleep(0.5)
 
         except Exception as e:
             print(f"Error fetching Designboom articles: {e}")
@@ -52,25 +76,75 @@ class DesignboomCrawler(BaseCrawler):
 
         return articles
 
-    async def parse_article(self, url: str, **kwargs) -> Article | None:
+    async def parse_article(self, url: str, fallback_title: str = "", **kwargs) -> Article | None:
         """Parse a single Designboom article."""
         try:
             response = await self.client.get(url)
             response.raise_for_status()
+            soup = BeautifulSoup(response.text, "lxml")
 
-            parsed = ContentParser.parse_article_page(response.text)
+            # Extract title
+            title = fallback_title
+            if not title:
+                title_elem = soup.select_one("h1")
+                if title_elem:
+                    title = title_elem.get_text(strip=True)
+
+            # Extract date
+            date_str = ""
+            date_elem = soup.select_one("div.date, span.date, time")
+            if date_elem:
+                date_text = date_elem.get_text(strip=True)
+                # Try to parse date
+                date_match = re.search(r"(\w+ \d{1,2},?\s*\d{4})", date_text)
+                if date_match:
+                    date_str = date_match.group(1)
+                    # Convert to YYYY-MM-DD
+                    try:
+                        from datetime import datetime
+                        parsed = datetime.strptime(date_str.replace(",", ""), "%B %d %Y")
+                        date_str = parsed.strftime("%Y-%m-%d")
+                    except:
+                        date_str = ""
+
+            # Extract description
+            description = ""
+            desc_elem = soup.select_one("div.lead, div.summary")
+            if desc_elem:
+                description = desc_elem.get_text(strip=True)
+            else:
+                # Try meta description
+                meta_desc = soup.select_one("meta[name='description']")
+                if meta_desc:
+                    description = meta_desc.get("content", "")
+
+            # Fallback description
+            if not description:
+                p_elem = soup.select_one("div.content p")
+                if p_elem:
+                    description = p_elem.get_text(strip=True)[:200]
+
+            # Extract image
+            image_url = ""
+            img_elem = soup.select_one("div.featured img, article img")
+            if img_elem:
+                image_url = img_elem.get("src", "")
+
+            if not title:
+                return None
 
             return Article(
-                title=parsed.title,
+                title=title,
                 url=url,
                 source=self.source_name,
                 source_type=self.source_type,
-                description=parsed.summary,
-                date=parsed.published_at[:10] if parsed.published_at else "",
-                image_url="",
-                content=parsed.content,
-                authors=parsed.authors,
+                description=description[:500] if description else "",
+                date=date_str,
+                image_url=image_url,
+                content="",
+                authors=[]
             )
+
         except Exception as e:
             print(f"Error parsing article {url}: {e}")
             return None
