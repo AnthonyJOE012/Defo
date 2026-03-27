@@ -20,7 +20,9 @@ jobs:
           pip install httpx beautifulsoup4 scholarly supabase
 
       - name: Run crawler
-        run: python -m crawlers.pipeline
+        run: |
+          cd crawlers
+          python -m pipeline
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
