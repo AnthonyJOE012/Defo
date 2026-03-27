@@ -88,18 +88,9 @@ class Pipeline:
             logger.error(f"Failed to store articles: {e}")
 
 
-# Import news crawlers
+# Import news crawlers (currently working)
 from news.designboom import DesignboomCrawler
 from news.dezeen import DezeenCrawler
-
-# Import paper crawlers
-from papers.google_scholar import GoogleScholarCrawler
-from papers.acm import ACMCrawler
-from papers.doaj import DOAJCrawler
-from papers.sciencedirect import ScienceDirectCrawler
-
-# Import competition crawlers
-from competitions.a_design_award import ADesignAwardCrawler
 
 
 async def main():
@@ -108,16 +99,9 @@ async def main():
     pipeline = Pipeline()
 
     crawlers: list[BaseCrawler] = [
-        # News crawlers
+        # News crawlers (working)
         DesignboomCrawler(),
         DezeenCrawler(),
-        # Paper crawlers
-        GoogleScholarCrawler(),
-        ACMCrawler(),
-        DOAJCrawler(),
-        ScienceDirectCrawler(),
-        # Competition crawlers
-        ADesignAwardCrawler(),
     ]
 
     logger.info(f"Running {len(crawlers)} crawlers...")
