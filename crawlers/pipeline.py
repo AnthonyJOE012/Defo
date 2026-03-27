@@ -143,6 +143,12 @@ class Pipeline:
 from news.designboom import DesignboomCrawler
 from news.dezeen import DezeenCrawler
 
+# Import paper crawlers
+from papers import ACMCrawler, CORECrawler
+
+# Import competition crawlers
+from competitions import ADesignAwardCrawler, RedDotCrawler, DezeenAwardsCrawler
+
 
 async def main():
     """Main entry point - runs all crawlers."""
@@ -150,9 +156,16 @@ async def main():
     pipeline = Pipeline()
 
     crawlers: list[BaseCrawler] = [
-        # News crawlers (working)
+        # News crawlers
         DesignboomCrawler(),
         DezeenCrawler(),
+        # Paper crawlers
+        ACMCrawler(),
+        CORECrawler(),
+        # Competition crawlers
+        ADesignAwardCrawler(),
+        RedDotCrawler(),
+        DezeenAwardsCrawler(),
     ]
 
     logger.info(f"Running {len(crawlers)} crawlers...")
