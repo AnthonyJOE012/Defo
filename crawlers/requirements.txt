@@ -1,0 +1,8 @@
+httpx
+beautifulsoup4
+scholarly
+supabase
+ruff
+pytest
+asyncio
+lxml
