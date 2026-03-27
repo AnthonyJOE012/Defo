@@ -30,16 +30,20 @@ class Pipeline:
         """Run a single crawler through the pipeline."""
         logger.info(f"Starting crawler: {crawler.source_name}")
 
-        articles = await crawler.run(**kwargs)
-        logger.info(f"Fetched {len(articles)} articles from {crawler.source_name}")
+        try:
+            articles = await crawler.run(**kwargs)
+            logger.info(f"Fetched {len(articles)} articles from {crawler.source_name}")
 
-        filtered_articles = self._deduplicate(articles)
-        logger.info(f"After deduplication: {len(filtered_articles)} articles")
+            filtered_articles = self._deduplicate(articles)
+            logger.info(f"After deduplication: {len(filtered_articles)} articles")
 
-        if self.supabase_client:
-            await self._store_articles(filtered_articles, crawler.source_type)
+            if self.supabase_client:
+                await self._store_articles(filtered_articles, crawler.source_type)
 
-        return filtered_articles
+            return filtered_articles
+        except Exception as e:
+            logger.error(f"Crawler {crawler.source_name} failed: {e}")
+            return []
 
     async def run_crawlers(self, crawlers: list[BaseCrawler], **kwargs) -> dict[str, list[Article]]:
         """Run multiple crawlers concurrently."""
@@ -66,23 +70,14 @@ class Pipeline:
         return unique_articles
 
     async def _store_articles(self, articles: list[Article], source_type: Any) -> None:
-        """Store articles in Supabase.
-
-        The articles table uses snake_case field names:
-        - description -> summary
-        - date -> published_at (as TIMESTAMPTZ)
-        - imageUrl -> image_url
-        - category is derived from source_type
-        """
+        """Store articles in Supabase."""
         if not self.supabase_client or not articles:
             return
 
         records = []
         for article in articles:
             record = article.to_dict()
-            # Add source type for the RPC function to map to category
             record["source_type"] = source_type.value if hasattr(source_type, 'value') else str(source_type)
-            # Store the source name for reference
             record["source_name"] = article.source
             records.append(record)
 
@@ -93,12 +88,46 @@ class Pipeline:
             logger.error(f"Failed to store articles: {e}")
 
 
+# Import news crawlers
+from news.designboom import DesignboomCrawler
+from news.dezeen import DezeenCrawler
+
+# Import paper crawlers
+from papers.google_scholar import GoogleScholarCrawler
+from papers.acm import ACMCrawler
+from papers.doaj import DOAJCrawler
+from papers.sciencedirect import ScienceDirectCrawler
+
+# Import competition crawlers
+from competitions.a_design_award import ADesignAwardCrawler
+
+
 async def main():
-    """Example main entry point."""
+    """Main entry point - runs all crawlers."""
     logger.info("Pipeline initialized")
-    # Crawlers will be imported and run here
-    # from news.designboom import DesignboomCrawler
-    # articles = await pipeline.run_crawler(DesignboomCrawler())
+    pipeline = Pipeline()
+
+    crawlers: list[BaseCrawler] = [
+        # News crawlers
+        DesignboomCrawler(),
+        DezeenCrawler(),
+        # Paper crawlers
+        GoogleScholarCrawler(),
+        ACMCrawler(),
+        DOAJCrawler(),
+        ScienceDirectCrawler(),
+        # Competition crawlers
+        ADesignAwardCrawler(),
+    ]
+
+    logger.info(f"Running {len(crawlers)} crawlers...")
+    results = await pipeline.run_crawlers(crawlers)
+
+    total_articles = sum(len(articles) for articles in results.values())
+    logger.info(f"Crawling complete! Total articles: {total_articles}")
+
+    for source, articles in results.items():
+        logger.info(f"  {source}: {len(articles)} articles")
 
 
 if __name__ == "__main__":

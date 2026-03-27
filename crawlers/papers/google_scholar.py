@@ -4,7 +4,6 @@ import asyncio
 from typing import Any
 
 import scholarly
-from scholarly import ProxyGenerator, SearchScholar
 
 from base import Article, BaseCrawler, SourceType
 
@@ -19,7 +18,7 @@ class GoogleScholarCrawler(BaseCrawler):
     def _setup_proxy(self) -> None:
         """Setup proxy for Google Scholar requests."""
         try:
-            pg = ProxyGenerator()
+            pg = scholarly.ProxyGenerator()
             pg.SinglePool(http=True, https=True)
             scholarly.use_libproxy(pg)
         except Exception:
@@ -42,10 +41,9 @@ class GoogleScholarCrawler(BaseCrawler):
         """
         articles = []
         try:
-            search = SearchScholar(query)
-            search.set_num_results(min(max_results, 100))
+            search_results = scholarly.search_papers(query, max_results)
 
-            for i, result in enumerate(search):
+            for i, result in enumerate(search_results):
                 if i >= max_results:
                     break
 
