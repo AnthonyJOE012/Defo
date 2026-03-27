@@ -128,6 +128,8 @@ class Pipeline:
             # Generate external_id from URL hash for proper deduplication
             if not record.get("external_id"):
                 record["external_id"] = hashlib.md5(article.url.encode()).hexdigest()[:16]
+            # Remove fields that don't exist in the database
+            record.pop("raw_data", None)
             records.append(record)
 
         try:
