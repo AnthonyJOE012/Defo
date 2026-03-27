@@ -107,7 +107,7 @@ class DesignboomCrawler(BaseCrawler):
                     except:
                         date_str = ""
 
-            # Extract description
+            # Extract description (lead/summary paragraph)
             description = ""
             desc_elem = soup.select_one("div.lead, div.summary")
             if desc_elem:
@@ -118,17 +118,29 @@ class DesignboomCrawler(BaseCrawler):
                 if meta_desc:
                     description = meta_desc.get("content", "")
 
-            # Fallback description
-            if not description:
-                p_elem = soup.select_one("div.content p")
-                if p_elem:
-                    description = p_elem.get_text(strip=True)[:200]
+            # Extract full article content
+            content = ""
+            content_elem = soup.select_one("article.post-content, .post-content, div.article-body")
+            if content_elem:
+                # Remove script, style, nav, footer, sidebar elements
+                for elem in content_elem.find_all(["script", "style", "nav", "footer", "aside", "div.share", "div.promotion"]):
+                    elem.decompose()
+                # Get text content with paragraph separation
+                content = content_elem.get_text(separator="\n", strip=True)
 
             # Extract image
             image_url = ""
             img_elem = soup.select_one("div.featured img, article img")
             if img_elem:
                 image_url = img_elem.get("src", "")
+
+            # Extract authors
+            authors = []
+            author_elem = soup.select_one("span.author, div.author, a.author")
+            if author_elem:
+                author_text = author_elem.get_text(strip=True)
+                if author_text:
+                    authors = [a.strip() for a in author_text.replace("by", "").split(",")]
 
             if not title:
                 return None
@@ -141,8 +153,8 @@ class DesignboomCrawler(BaseCrawler):
                 description=description[:500] if description else "",
                 date=date_str,
                 image_url=image_url,
-                content="",
-                authors=[]
+                content=content,
+                authors=authors
             )
 
         except Exception as e:
