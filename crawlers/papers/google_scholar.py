@@ -1,7 +1,6 @@
 """Google Scholar crawler using scholarly library."""
 
 import asyncio
-from datetime import datetime
 from typing import Any
 
 import scholarly

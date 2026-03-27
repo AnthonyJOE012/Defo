@@ -4,7 +4,7 @@ import asyncio
 import logging
 from typing import Any
 
-from base import Article, BaseCrawler, CATEGORY_MAP
+from base import Article, BaseCrawler
 from config import config
 from deduplicator import Deduplicator
 from supabase import Client, create_client
@@ -95,7 +95,6 @@ class Pipeline:
 
 async def main():
     """Example main entry point."""
-    pipeline = Pipeline()
     logger.info("Pipeline initialized")
     # Crawlers will be imported and run here
     # from news.designboom import DesignboomCrawler
