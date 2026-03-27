@@ -4,7 +4,7 @@ import asyncio
 import logging
 from typing import Any
 
-from base import Article, BaseCrawler
+from base import Article, BaseCrawler, SourceType
 from config import config
 from deduplicator import Deduplicator
 from supabase import Client, create_client
@@ -19,6 +19,7 @@ class Pipeline:
     def __init__(self):
         self.supabase_client: Client | None = None
         self.deduplicator = Deduplicator()
+        self._source_cache: dict[str, str] = {}  # source_name -> source_id
 
         if config.supabase.url and config.supabase.key:
             self.supabase_client = create_client(
@@ -38,7 +39,7 @@ class Pipeline:
             logger.info(f"After deduplication: {len(filtered_articles)} articles")
 
             if self.supabase_client:
-                await self._store_articles(filtered_articles, crawler.source_type)
+                await self._store_articles(filtered_articles, crawler.source_name, crawler.source_type)
 
             return filtered_articles
         except Exception as e:
@@ -69,16 +70,60 @@ class Pipeline:
                 self.deduplicator.add_to_seen(article)
         return unique_articles
 
-    async def _store_articles(self, articles: list[Article], source_type: Any) -> None:
+    async def _get_or_create_source(self, source_name: str, source_type: SourceType) -> str:
+        """Get or create a source and return its ID."""
+        # Check cache first
+        if source_name in self._source_cache:
+            return self._source_cache[source_name]
+
+        if not self.supabase_client:
+            return ""
+
+        # Try to find existing source
+        slug = source_name.lower().replace(" ", "-")
+        response = self.supabase_client.table("sources").select("id").eq("slug", slug).execute()
+
+        if response.data and len(response.data) > 0:
+            source_id = response.data[0]["id"]
+            self._source_cache[source_name] = source_id
+            return source_id
+
+        # Create new source
+        source_type_value = source_type.value if hasattr(source_type, 'value') else str(source_type)
+        new_source = {
+            "name": source_name,
+            "slug": slug,
+            "type": source_type_value,
+            "url": f"https://{slug.replace('-', '')}.com",  # Placeholder URL
+        }
+
+        try:
+            response = self.supabase_client.table("sources").insert(new_source).execute()
+            if response.data and len(response.data) > 0:
+                source_id = response.data[0]["id"]
+                self._source_cache[source_name] = source_id
+                logger.info(f"Created new source: {source_name}")
+                return source_id
+        except Exception as e:
+            logger.error(f"Failed to create source {source_name}: {e}")
+
+        return ""
+
+    async def _store_articles(self, articles: list[Article], source_name: str, source_type: SourceType) -> None:
         """Store articles in Supabase."""
         if not self.supabase_client or not articles:
+            return
+
+        # Get or create the source
+        source_id = await self._get_or_create_source(source_name, source_type)
+        if not source_id:
+            logger.error(f"Could not get or create source: {source_name}")
             return
 
         records = []
         for article in articles:
             record = article.to_dict()
-            record["source_type"] = source_type.value if hasattr(source_type, 'value') else str(source_type)
-            record["source_name"] = article.source
+            record["source_id"] = source_id
             records.append(record)
 
         try:
