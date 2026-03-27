@@ -1,6 +1,7 @@
 """Data pipeline entry point for crawlers."""
 
 import asyncio
+import hashlib
 import logging
 from typing import Any
 
@@ -124,10 +125,13 @@ class Pipeline:
         for article in articles:
             record = article.to_dict()
             record["source_id"] = source_id
+            # Generate external_id from URL hash for proper deduplication
+            if not record.get("external_id"):
+                record["external_id"] = hashlib.md5(article.url.encode()).hexdigest()[:16]
             records.append(record)
 
         try:
-            self.supabase_client.table(config.supabase.table_name).insert(records).execute()
+            self.supabase_client.table(config.supabase.table_name).upsert(records, on_conflict="source_id,external_id").execute()
             logger.info(f"Stored {len(records)} articles in Supabase")
         except Exception as e:
             logger.error(f"Failed to store articles: {e}")
