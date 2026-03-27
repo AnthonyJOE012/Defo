@@ -5,7 +5,7 @@ import { useCollections } from "../contexts/CollectionContext";
 import { mockArticles } from "../data/mockArticles";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useState, useEffect } from "react";
-import { getFavoriteArticles } from "../services/collections";
+import { getFavoriteArticles } from "../../services/collections";
 
 export default function CollectionInternal() {
   const { id } = useParams<{ id: string }>();

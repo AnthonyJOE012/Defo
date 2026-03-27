@@ -1,4 +1,3 @@
-import { X } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { useLanguage } from "../contexts/LanguageContext";
@@ -14,14 +13,9 @@ export function SidebarMenu({ isOpen, onClose }: SidebarMenuProps) {
   const { language, toggleLanguage, t } = useLanguage();
   const { collections, removeCollection } = useCollections();
   const [longPressCollection, setLongPressCollection] = useState<string | null>(null);
-  const [longPressTimer, setLongPressTimer] = useState<NodeJS.Timeout | null>(null);
+  const [longPressTimer, setLongPressTimer] = useState<number | null>(null);
 
   if (!isOpen) return null;
-
-  const handleNavigateHome = () => {
-    navigate("/");
-    onClose();
-  };
 
   const handleNavigateCollection = (collectionId: string) => {
     navigate(`/collection/${collectionId}`);

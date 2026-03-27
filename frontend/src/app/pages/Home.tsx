@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { SidebarMenu } from "../components/SidebarMenu";
 import { ArticleCard } from "../components/ArticleCard";
 import { CalendarView } from "../components/CalendarView";
-import { DateRangePicker } from "../components/DateRangePicker";
-import { mockArticles, getArticlesByCategory, getArticlesByDate, ArticleCategory, getArticleCountByCategory } from "../data/mockArticles";
+import { DateRangePicker } from "../../components/DateRangePicker";
+import { mockArticles, ArticleCategory, getArticleCountByCategory } from "../data/mockArticles";
 import svgPaths from "../../imports/svg-60podcrfbk";
 import { useLanguage } from "../contexts/LanguageContext";
 import { useArticles, useSearchArticles } from "../../hooks/useArticles";
@@ -34,20 +34,6 @@ export default function Home() {
 
   // Determine if we're in search mode
   const isSearchMode = searchQuery.trim().length > 0;
-
-  // Determine API params based on filters
-  const getApiParams = () => {
-    if (isSearchMode) {
-      return { query: searchQuery };
-    }
-    if (selectedDate) {
-      return {};
-    }
-    if (selectedCategory !== "all") {
-      return { category: selectedCategory };
-    }
-    return {};
-  };
 
   // Use search API when there's a search query
   const {
@@ -114,17 +100,6 @@ export default function Home() {
     setSearchQuery("");
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0;
-    }
-  };
-
-  const handleCalendarToggle = () => {
-    setIsCalendarOpen(!isCalendarOpen);
-  };
-
-  const handleDateRangeChange = (range: { start: string | null; end: string | null }) => {
-    setDateRange(range);
-    if (range.start && range.end) {
-      setIsDatePickerOpen(false);
     }
   };
 
@@ -209,7 +184,7 @@ export default function Home() {
             >
               <div className="w-[17px] h-[17px]">
                 <svg className="block w-full h-full" fill="none" preserveAspectRatio="none" viewBox="0 0 15.584 15.584">
-                  <path d={svgPaths.p10363500} fill="var(--fill-0, #333333)" />
+                  <path d={svgPaths.p7a14d80} fill="var(--fill-0, #333333)" />
                 </svg>
               </div>
               <span className="font-['Helvetica:Regular',sans-serif] text-[20px] text-black leading-[22px]">

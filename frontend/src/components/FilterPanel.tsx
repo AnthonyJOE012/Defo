@@ -4,7 +4,7 @@
  * Provides type and date range filtering for articles.
  */
 
-import { ArticleCategory } from '../data/mockArticles';
+import { ArticleCategory } from '../app/data/mockArticles';
 
 interface FilterPanelProps {
   selectedType: ArticleCategory | 'all';

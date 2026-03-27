@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { searchArticles, ArticlesQueryParams } from '../services/articles';
+import { searchArticles } from '../services/articles';
 import { Article } from '../services/adapter';
 
 export function useSearch() {

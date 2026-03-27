@@ -5,7 +5,7 @@
  * using IndexedDB for persistence.
  */
 
-import { db, LocalCollection, LocalFavorite } from '../lib/db';
+import { db, LocalCollection } from '../lib/db';
 
 const DEFAULT_COLLECTION_ID = 'my-library';
 const DEFAULT_COLLECTION_NAME = 'My Library';
@@ -20,7 +20,8 @@ export async function initializeDefaultCollection(): Promise<void> {
       id: DEFAULT_COLLECTION_ID,
       name: DEFAULT_COLLECTION_NAME,
       isDefault: true,
-      createdAt: new Date('2026-03-01T00:00:00Z')
+      createdAt: new Date('2026-03-01T00:00:00Z'),
+      articleIds: []
     });
   }
 }
@@ -41,7 +42,8 @@ export async function createCollection(name: string): Promise<string> {
     id,
     name,
     isDefault: false,
-    createdAt: new Date()
+    createdAt: new Date(),
+    articleIds: []
   });
   return id;
 }

@@ -28,6 +28,7 @@ export interface LocalCollection {
   name: string;
   isDefault: boolean;
   createdAt: Date;
+  articleIds: string[];
 }
 
 export interface LocalFavorite {

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { ArrowLeft, Plus, Trash2, Edit2, Check, X } from "lucide-react";
 import { useCollections } from "../contexts/CollectionContext";
 import { useLanguage } from "../contexts/LanguageContext";
-import { getFavoriteArticles } from "../services/collections";
+import { getFavoriteArticles } from "../../services/collections";
 
 export default function ManageCollections() {
   const navigate = useNavigate();

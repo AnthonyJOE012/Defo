@@ -1,5 +1,4 @@
 import { X } from "lucide-react";
-import svgPaths from "../../imports/svg-ijtftoose6";
 import { getDatesWithArticles } from "../data/mockArticles";
 
 interface CalendarViewProps {

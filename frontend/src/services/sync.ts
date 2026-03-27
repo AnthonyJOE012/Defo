@@ -1,6 +1,5 @@
 import { db, LocalArticle } from '../lib/db';
 import { fetchArticles } from './articles';
-import { transformArticle } from './adapter';
 
 export interface SyncResult {
   success: boolean;
