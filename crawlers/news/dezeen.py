@@ -105,20 +105,34 @@ class DezeenCrawler(BaseCrawler):
             if date_tag:
                 date = date_tag.get("datetime", "")[:10]
 
+            # Extract authors
             author_tag = soup.find("meta", property="author")
-            authors = [author_tag.get("content", "")] if author_tag else []
+            authors = []
+            if author_tag:
+                author_content = author_tag.get("content", "")
+                if author_content:
+                    authors = [a.strip() for a in author_content.split(",")]
+            else:
+                # Try to find author in page
+                author_elem = soup.select_one("span.author, a.author, div.author")
+                if author_elem:
+                    authors = [author_elem.get_text(strip=True)]
 
-            content_tag = soup.find("article") or soup.find("main")
+            # Extract full article content
             content = ""
-            if content_tag:
-                content = content_tag.get_text(strip=True)
+            content_elem = soup.select_one("article, div.article-body, div.post-body")
+            if content_elem:
+                # Remove script, style, nav, footer elements
+                for elem in content_elem.find_all(["script", "style", "nav", "footer", "aside", "div.ad", "div.share"]):
+                    elem.decompose()
+                content = content_elem.get_text(separator="\n", strip=True)
 
             return Article(
                 title=title,
                 url=url,
                 source=self.source_name,
                 source_type=self.source_type,
-                description=description,
+                description=description[:500] if description else "",
                 date=date,
                 image_url=image_url,
                 content=content,

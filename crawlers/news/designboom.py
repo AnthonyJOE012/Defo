@@ -120,10 +120,16 @@ class DesignboomCrawler(BaseCrawler):
 
             # Extract full article content
             content = ""
-            content_elem = soup.select_one("article.post-content, .post-content, div.article-body")
+            # Try selectors with priority (use 'or' to try each, not select_one with comma)
+            content_elem = (
+                soup.select_one(".post-content") or
+                soup.select_one("article") or
+                soup.select_one("div.article-body") or
+                soup.select_one("main")
+            )
             if content_elem:
-                # Remove script, style, nav, footer, sidebar elements
-                for elem in content_elem.find_all(["script", "style", "nav", "footer", "aside", "div.share", "div.promotion"]):
+                # Remove script, style, nav, footer, sidebar, ad elements
+                for elem in content_elem.find_all(["script", "style", "nav", "footer", "aside", "div.share", "div.promotion", "div.ad", "div.p--popular"]):
                     elem.decompose()
                 # Get text content with paragraph separation
                 content = content_elem.get_text(separator="\n", strip=True)
